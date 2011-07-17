@@ -1,0 +1,75 @@
+#!/usr/bin/python
+import sys
+import os
+
+class autoBod:
+	def __init__(self):
+		statFlag=0
+		print "Running dependency checks"
+		print "checking ... makeself"
+		status =  os.path.exists('/usr/bin/makeself')
+		if(status == True):
+			 print "Found"
+			 statFlag+=1
+		else:
+			print "Not installed. Exiting...."
+			exit()
+		print "checking ... zenity"
+		status = os.path.exists('/usr/bin/zenity')
+		if(status == True):
+			print "Found"
+			statFlag+=1
+		else:
+			print "Not installed. Exiting...."
+			exit()
+		if(statFlag==2):
+			print "Dependencies satisfied checking..."
+
+	def createAptLists(self,appName):
+		if(os.path.exists('./'+appName)):
+			command = "rm -rf "+appName
+			os.system(command)
+			print "Cleaned up application folder"
+		command = "mkdir "+appName
+		os.system(command)
+		print "Application folder created"		
+		command = "apt-get -qq --print-uris install "+appName+" >"+" ./"+appName+"/"+appName
+		os.system(command)
+		print "Created apt-get lists."
+		command = "awk '{gsub(\"\\x27\", \"\", $0); print $1}' < "+"./"+appName+"/"+appName+" > "+"./"+appName+"/"+appName+".sh"
+		os.system(command)
+		print "Created file download list"
+		command ="wget -i ./"+appName+"/"+appName+".sh"+" -P ./"+appName
+		os.system(command)
+		print "Download complete..."
+		command = "cp -r /var/lib/apt/lists ./"+appName
+		os.system(command)
+		print "Copied apt source list"
+
+	def createInstaller(self,appName,appCat):
+		installer = open("installer","r").read()
+		f = open("./"+appName+"/installer", "w")
+		installer = installer.replace("$$APPNAME$$",appName)
+		installer = installer.replace("$$CATEGORY$$",appCat)
+		f.write(installer)
+		f.close()
+		command = "chmod 777 ./"+appName+"/installer"
+		os.system(command)
+		print "Installer created"
+	
+	def createBod(self,appName):
+		command = "sudo makeself --nox11 --bzip2 ./"+appName+" "+appName+".bod 'Liferea RSS Reader' ./installer"
+		os.system(command)
+		print "Created "+appName+".bod"
+		
+
+if(len(sys.argv) < 3):
+	print "Please provide an application name to bod along with category."
+	print "Ex: sudo autobod appName appCat"
+	exit()
+else:
+	autoBod = autoBod()
+	autoBod.createAptLists(sys.argv[1])
+	autoBod.createInstaller(sys.argv[1],sys.argv[2])
+	autoBod.createBod(sys.argv[1])
+
