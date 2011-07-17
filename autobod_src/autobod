@@ -57,8 +57,8 @@ class autoBod:
 		os.system(command)
 		print "Installer created"
 	
-	def createBod(self,appName):
-		command = "sudo makeself --nox11 --bzip2 ./"+appName+" "+appName+".bod 'Liferea RSS Reader' ./installer"
+	def createBod(self,appName,appDesc):
+		command = "sudo makeself --nox11 --bzip2 ./"+appName+" "+appName+".bod '"+appDesc+"' ./installer"
 		os.system(command)
 		print "Created "+appName+".bod"
 		
@@ -68,8 +68,12 @@ if(len(sys.argv) < 3):
 	print "Ex: sudo autobod appName appCat"
 	exit()
 else:
+	appDesc = raw_input("Please type in an application description:")
+	if(len(appDesc) == 0):
+		print "Description cannot be empty: Bod file packaging standards."
+		exit()
 	autoBod = autoBod()
 	autoBod.createAptLists(sys.argv[1])
 	autoBod.createInstaller(sys.argv[1],sys.argv[2])
-	autoBod.createBod(sys.argv[1])
+	autoBod.createBod(sys.argv[1],appDesc)
 
