@@ -1,9 +1,27 @@
 #!/usr/bin/python
+#Copyright (c) 2011, Bodhilinux Team
+#All rights reserved.
+#
+#Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+#
+#Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+#Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation 
+#and/or other materials provided with the distribution.
+#
+#THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, 
+#BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+#IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+#(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
+#ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+#OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 import sys
 import os
+import subprocess
 
 class autoBod:
-	def __init__(self):
+	def __init__(self,ncursesSupprt):
+		#running checks for dependencies
 		statFlag=0
 		print "Running dependency checks"
 		print "checking ... makeself"
@@ -22,58 +40,207 @@ class autoBod:
 		else:
 			print "Not installed. Exiting...."
 			exit()
-		if(statFlag==2):
+		#runs ncurses check if ncurses support is explicitly set to true
+                if(ncursesSupprt=="y"):
+			print "checking ... debconf-get-selections"
+	                status =  os.path.exists('/usr/bin/debconf-get-selections')
+			if(status==True):
+	                        print "Found"
+        	                statFlag+=1
+                	else:
+                        	print "Not installed. Exiting...."
+                        	exit()
+		#needs to be added automatically install dependencies using apt-get installer.
+		if(statFlag==3):
 			print "Dependencies satisfied checking..."
 
 	def createAptLists(self,appName):
+		#checking if clean up is required.
 		if(os.path.exists('./'+appName)):
 			command = "rm -rf "+appName
 			os.system(command)
 			print "Cleaned up application folder"
+
+		#create work folder under current folder, relative URLs in use
 		command = "mkdir "+appName
 		os.system(command)
 		print "Application folder created"		
+
+		#create apt url lists for download
 		command = "apt-get -qq --print-uris install "+appName+" >"+" ./"+appName+"/"+appName
 		os.system(command)
 		print "Created apt-get lists."
+		
+		#awk replace and edit apt uris to enable wget download
 		command = "awk '{gsub(\"\\x27\", \"\", $0); print $1}' < "+"./"+appName+"/"+appName+" > "+"./"+appName+"/"+appName+".sh"
 		os.system(command)
 		print "Created file download list"
+		
+		#start download of dependencies using wget
 		command ="wget -i ./"+appName+"/"+appName+".sh"+" -P ./"+appName
 		os.system(command)
 		print "Download complete..."
+		
+		#copy sourcelists to current folder, has to be run as root, 
+		#but since global permissions are used this will work implicitly
 		command = "cp -r /var/lib/apt/lists ./"+appName
 		os.system(command)
 		print "Copied apt source list"
 
-	def createInstaller(self,appName,appCat):
-		installer = open("installer","r").read()
+	def createInstaller(self,appName,appCat,ncurseString):
+
+		#creating the installer file
+		installer = open("./templates/installer","r").read()
 		f = open("./"+appName+"/installer", "w")
+
+		#replacing custom variables to make process dynamic and generic
 		installer = installer.replace("$$APPNAME$$",appName)
-		installer = installer.replace("$$CATEGORY$$",appCat)
+		
+		#AppDscr, thanks to hippytaff.
+		installer = installer.replace("$$APPINSTR$$",appInstr)
+		
+		#ncurses string, will be null if support for ncurses is disabled.
+		installer = installer.replace("$$NCURSES$$",ncurseString)
 		f.write(installer)
 		f.close()
+
+		#chmod to 777, could be a security threat?
 		command = "chmod 777 ./"+appName+"/installer"
 		os.system(command)
 		print "Installer created"
 	
 	def createBod(self,appName,appDesc):
+		#starting making the bod
 		command = "sudo makeself --nox11 --bzip2 ./"+appName+" "+appName+".bod '"+appDesc+"' ./installer"
 		os.system(command)
+		#Done
 		print "Created "+appName+".bod"
+
+	def ncursesStringMake(self,ncursesDscr,ncursesOptions):
+		#open ncurses template from templates folder
+		#thanks to ylee for this.
+		installer = open("./templates/ncurses","r").read()
+		#replacing variables
+                installer = installer.replace("$$APPNAME$$",appName)
+                installer = installer.replace("$$NCURSESDSCR$$",ncursesDscr)
+		installer = installer.replace("$$NCURSESOPTION$$",ncursesOptions)
+		#reutrn ncurses string for replace
+                return installer
 		
 
-if(len(sys.argv) < 3):
-	print "Please provide an application name to bod along with category."
-	print "Ex: sudo autobod appName appCat"
+#autobod variables
+autobodVersion = "0.3 Beta"
+autobodLicense = "BSD License"
+autobodCopyright = "Bodhilinux, (C) 2011."
+autobodThanks = "Hippytaff, ylee, Jeff91."
+
+#autobod execution runtime starts here
+
+if( sys.argv[1] == "-h" ):
+	print "sudo autobod [options]"
+	print "-h prints this messgae"
+	print "-m appName appCat - set appCat to custom for custom category/messgae support"
+	print "-c appName - Cleans and removes the installed application using apt-get"
+	print "-v - print version, get support, license, and copyright"
 	exit()
-else:
+elif( sys.argv[1] == "-m" ):
+	#make bod area
+	#application description made dynamic
+	
+	#checking for missing sys arguments
+	try:
+		appCat = sys.argv[3]
+		appName = sys.argv[2]
+	except IndexError:
+		 exit("missing arguements, check autobod -h for help")
 	appDesc = raw_input("Please type in an application description:")
+	#enforce packaging standards, all across the file
 	if(len(appDesc) == 0):
 		print "Description cannot be empty: Bod file packaging standards."
 		exit()
-	autoBod = autoBod()
-	autoBod.createAptLists(sys.argv[1])
-	autoBod.createInstaller(sys.argv[1],sys.argv[2])
-	autoBod.createBod(sys.argv[1],appDesc)
 
+	#Handle custom messages
+	if(appCat=="custom"):
+		appInstr = raw_input("Enter custom message for installer:")
+		appInstr = "<b>$$APPNAME$$ Installed</b>\n"+appInstr
+	else:
+		appInstr = "<b>$$APPNAME$$ Installed</b>\nFind it in your applications menu under <i>$$CATEGORY$$</i>"
+		appInstr = appInstr.replace("$$CATEGORY$$",appCat)
+		appInstr = appInstr.replace("$$APPNAME$$",appName)
+
+	#checking ncurses support
+	ncursesSupprt = "y"
+	ncursesSupprt = raw_input("Enable ncurses support for this application?(Y/n)")
+	ncursesSupprt = ncursesSupprt.lower()
+	if(ncursesSupprt=="y"):
+		ncursesDscr = raw_input("Ncurses display message?")
+		ncursesOptions = raw_input("Ncurses option(ex: default-viewer)")
+		if(ncursesOptions==""):
+			exit("ncurses option Cannot be null please restart!") 
+		#ncurseString = ncursesStringMake(ncursesDscr,ncursesOptions)
+	else:
+		ncurseString = ""
+		ncursesSupprt="n"
+
+	#calling in sequence
+	#autoBod main object
+	autoBod = autoBod(ncursesSupprt)
+
+	#create the ncurses string
+	ncurseString = autoBod.ncursesStringMake(ncursesDscr,ncursesOptions)
+
+	#autobod create apt lists and download files
+	autoBod.createAptLists(appName)
+
+	#autobod create the installer.sh file
+	autoBod.createInstaller(appName,appInstr,ncurseString)
+
+	#autobod create the bod file
+	autoBod.createBod(appName,appDesc)
+
+elif(sys.argv[1]=="-c"):
+
+	#checking for missing args
+	try:
+		appName = sys.argv[2]
+	except IndexError:
+		exit("missing arguements, autobod -h for help")
+
+	#starting the clenaup
+	print "Starting cleanup..."
+
+	#folder cleaning
+	print "checking for work folder.."
+	if(os.path.exists('./'+appName)):
+		print "Found, removing..."
+                command = "rm -rf "+appName
+                os.system(command)
+                print "Cleaned up application folder"
+	else:
+		print "Not present. proceeding..."	
+
+	#cleaning installation
+	print "Checking application installation..."
+	command = "dpkg-query -l "+appName+" | grep \""+appName+"\" | cut -d\" \" -f3 -s > ran34.txt"
+	os.system(command)
+	appName1 = open("ran34.txt","r").read().strip()
+	command = "rm -rf ran34.txt"
+	os.system(command)
+	if(appName==appName1):
+		print "Uninstalling "+appName
+		command = "apt-get remove "+appName
+		os.system(command)
+		print "Removing file for "+appName
+		command = "apt-get clean"
+		os.system(command)
+		print "Purging configurations"
+		command = "apt-get purge "+appName
+		os.system(command)
+	print "Super cow powers helped clean this system..."
+
+elif(sys.argv[1]=="-v"):
+	print "Autobod script verson: "+autobodVersion
+	print "Licensed under "+autobodLicense
+	print "Author: Jose Mathew Manimala"
+	print "Special thanks to "+autobodThanks
+	print "Copyright "+autobodCopyright

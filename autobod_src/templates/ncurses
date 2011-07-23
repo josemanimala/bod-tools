@@ -1,0 +1,11 @@
+######## Dealing with ncurses Dialog
+ 
+        zenity --question --text="$$NCURSESDSCR$$"
+        if [ $? == 0 ]
+        then
+            sudo echo "$$APPNAME $$APPNAME$$/$$NCURSESOPTION$$ boolean true" | sudo debconf-set-selections
+        else
+            sudo echo "$$APPNAME$$ $$APPNAME$$/$$NCURSESOPTION$$ boolean false" | sudo debconf-set-selections
+        fi
+########
+
