@@ -136,14 +136,19 @@ autobodThanks = "Hippytaff, ylee, Jeff91."
 
 #autobod execution runtime starts here
 
-if( sys.argv[1] == "-h" ):
+try:
+	switch = sys.argv[1] 
+except IndexError:
+	switch = "-h"
+
+if( switch == "-h" ):
 	print "sudo autobod [options]"
 	print "-h prints this messgae"
 	print "-m appName appCat - set appCat to custom for custom category/messgae support"
 	print "-c appName - Cleans and removes the installed application using apt-get"
 	print "-v - print version, get support, license, and copyright"
 	exit()
-elif( sys.argv[1] == "-m" ):
+elif( switch == "-m" ):
 	#make bod area
 	#application description made dynamic
 	
@@ -198,7 +203,7 @@ elif( sys.argv[1] == "-m" ):
 	#autobod create the bod file
 	autoBod.createBod(appName,appDesc)
 
-elif(sys.argv[1]=="-c"):
+elif(switch == "-c"):
 
 	#checking for missing args
 	try:
@@ -238,7 +243,7 @@ elif(sys.argv[1]=="-c"):
 		os.system(command)
 	print "Super cow powers helped clean this system..."
 
-elif(sys.argv[1]=="-v"):
+elif(switch == "-v"):
 	print "Autobod script verson: "+autobodVersion
 	print "Licensed under "+autobodLicense
 	print "Author: Jose Mathew Manimala"
