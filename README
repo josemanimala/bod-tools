@@ -1,0 +1,54 @@
+Version: Apha 0.2
+Script Author: Jose Manimala
+Date: 20/07/2011
+
+
+Description:
+
+Autobod is a script to autmate the .Bod building process for the Bodhilinux Operating System. Bod files
+are a self executable collection of .deb files created using makeself and clever bash scripting created
+by Jeff Hoogland. More information about bods and bodhilinux can be found at http://www.bodhilinux.com
+
+
+Installation:
+
+You will need both the autobod script and the installer
+
+- Put the autobod script into /usr/bin - cp autobod /usr/bin
+- Change permissions to make the script executable - chmod 755 /usr/bin/autobod
+- Create a 'working' folder eg - mkdir bod-build
+- put the installer script into the 'working' folder - cp installer /bod-build
+
+
+usage:
+
+The script needs to be run as root.
+
+sudo autobod <appname> <appcat> <appdesc>
+
+Where 
+<appname> is the name of the application/package ie firefox
+<appcat> is the menu in applications where the appliaction will be accesed from ie internet
+<appdesc> is the brief description of the application ie web browser
+
+
+To be implemented:
+
+- ncurses support
+- wrapper script to enable batch conversion
+- clean up command to clean up ie autoremove, autoclean, purge, to leave the session in a 'clean/fresh'
+state in order to be able to succesfully continue building more bods.
+
+
+NOTE
+
+Bods need to be built on an entirly fresh install, or a live environment which hasn't been upgraded, and on which nothing is installed other than makeself.
+
+sudo apt-get update needs to be run to refresh the package list.
+
+For more information on the bod building process see http://www.bodhilinux.com/wiki/doku.php?id=bod_files_-_howto_build
+
+
+Other resources
+http://www.bodhilinux.com/forums/
+irc #bodhilinux
