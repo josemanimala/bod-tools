@@ -129,9 +129,9 @@ class autoBod:
 		
 
 #autobod variables
-autobodVersion = "0.3 Beta"
+autobodVersion = "0.3.2 Beta"
 autobodLicense = "BSD License"
-autobodCopyright = "Bodhilinux, (C) 2011."
+autobodCopyright = "Bodhi Linux, (C) 2011."
 autobodThanks = "Hippytaff, ylee, Jeff91."
 
 #autobod execution runtime starts here
@@ -248,4 +248,5 @@ elif(switch == "-v"):
 	print "Licensed under "+autobodLicense
 	print "Author: Jose Mathew Manimala"
 	print "Special thanks to "+autobodThanks
-	print "Copyright "+autobodCopyright
+	print "Support: http://bodhilinux.com/forums/"
+	print "Copyright: "+autobodCopyright
