@@ -30,16 +30,28 @@ class autoBod:
 			 print "Found"
 			 statFlag+=1
 		else:
-			print "Not installed. Exiting...."
-			exit()
+			print "Not installed."
+			getStat = raw_input("Install makeself?")
+			getStat = getStat.lower()
+			if(getStat=="y"):
+				command = "apt-get install makeself -y -f"
+				os.system(command)
+			else:
+				exit("Missing dependancy")
 		print "checking ... zenity"
 		status = os.path.exists('/usr/bin/zenity')
 		if(status == True):
 			print "Found"
 			statFlag+=1
 		else:
-			print "Not installed. Exiting...."
-			exit()
+			print "Not installed."
+			getStat = raw_input("Install zenity?")
+                        getStat = getStat.lower()
+                        if(getStat=="y"):
+                                command = "apt-get install zenity -y -f"
+                                os.system(command)
+                        else:
+                                exit("Missing dependancy")
 		#runs ncurses check if ncurses support is explicitly set to true
                 if(ncursesSupprt=="y"):
 			print "checking ... debconf-get-selections"
@@ -127,6 +139,10 @@ class autoBod:
 		#reutrn ncurses string for replace
                 return installer
 		
+#checking root
+
+if not os.geteuid()==0:
+    sys.exit("\nPlease execute this script as root user or using sudo!\n")
 
 #autobod variables
 autobodVersion = "0.3.2 Beta"
@@ -177,6 +193,7 @@ elif( switch == "-m" ):
 	ncursesSupprt = "y"
 	ncursesSupprt = raw_input("Enable ncurses support for this application?(Y/n)")
 	ncursesSupprt = ncursesSupprt.lower()
+	ncursesDscr = "Default"
 	if(ncursesSupprt=="y"):
 		ncursesDscr = raw_input("Ncurses display message?")
 		ncursesOptions = raw_input("Ncurses option(ex: default-viewer)")
@@ -192,7 +209,9 @@ elif( switch == "-m" ):
 	autoBod = autoBod(ncursesSupprt)
 
 	#create the ncurses string
-	ncurseString = autoBod.ncursesStringMake(ncursesDscr,ncursesOptions)
+	if(ncursesSupprt=='y'):
+		print ncursesDscr
+		ncurseString = autoBod.ncursesStringMake(ncursesDscr,ncursesOptions)
 
 	#autobod create apt lists and download files
 	autoBod.createAptLists(appName)
